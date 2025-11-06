@@ -1,3 +1,4 @@
+// Constantes del DOM
 const btnTakePhoto = document.getElementById("btnTakePhoto");
 const btnCapture = document.getElementById("btnCapture");
 const btnCancel = document.getElementById("btnCancel");
@@ -11,25 +12,47 @@ const backgroundParticles = document.getElementById("backgroundParticles");
 
 let stream = null;
 
-// --- Evento: Abrir Modal y Acceder a Cámara ---
-btnTakePhoto.addEventListener("click", async () => {
+// Función para mostrar mensajes de sistema (éxito/error) en la interfaz
+function showSystemMessage(message, isSuccess = false) {
+    document.querySelectorAll(".system-message").forEach(el => el.remove());
+
+    const messageDiv = document.createElement("div");
+    messageDiv.classList.add("system-message");
+    if (isSuccess) {
+        messageDiv.classList.add("success");
+    }
+    messageDiv.textContent = message;
+
+    document.body.appendChild(messageDiv);
+
+    // El mensaje desaparece después de 4 segundos
+    setTimeout(() => {
+        messageDiv.style.opacity = 0;
+        setTimeout(() => messageDiv.remove(), 500);
+    }, 4000);
+}
+
+// Evento para solicitar acceso a la cámara y mostrar el modal de video
+btnTakePhoto.addEventListener("click", async() => {
     try {
+        // Solicitar acceso a la cámara (requiere HTTPS o localhost)
         stream = await navigator.mediaDevices.getUserMedia({
             video: true
         });
         video.srcObject = stream;
         videoModal.classList.add("show");
     } catch (err) {
-        alert("No se pudo acceder a la cámara: " + err.message);
+        // Muestra el tipo de error (ej: NotAllowedError) para facilitar el diagnóstico
+        showSystemMessage(`🚨 Error (${err.name}): ${err.message}. Verifique permisos y conexión.`, false);
     }
 });
 
-// --- Evento: Capturar Foto ---
+// Evento para tomar la foto desde el video stream y mostrarla en la vista previa
 btnCapture.addEventListener("click", () => {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const imageDataUrl = canvas.toDataURL("image/png");
     preview.src = imageDataUrl;
@@ -39,12 +62,12 @@ btnCapture.addEventListener("click", () => {
     closeCamera();
 });
 
-// --- Evento: Cancelar Captura ---
+// Evento para cerrar la cámara si se cancela la captura
 btnCancel.addEventListener("click", () => {
     closeCamera();
 });
 
-// --- Función: Cerrar Cámara y Modal ---
+// Función para detener el stream de la cámara y ocultar el modal
 function closeCamera() {
     if (stream) {
         stream.getTracks().forEach((track) => track.stop());
@@ -53,7 +76,7 @@ function closeCamera() {
     videoModal.classList.remove("show");
 }
 
-// --- Evento: Guardar Datos ---
+// Evento para validar datos, simular el guardado y limpiar el formulario
 btnSave.addEventListener("click", () => {
     const data = {
         nombreCompleto: document.getElementById("nombreCompleto").value,
@@ -63,39 +86,44 @@ btnSave.addEventListener("click", () => {
         foto: preview.src,
     };
 
-    if (!data.nombreCompleto ||
-        !data.apellido1 ||
-        !data.apellido2 ||
-        !data.curp
-    ) {
-        alert("Por favor complete todos los campos");
+    const inputs = [data.nombreCompleto, data.apellido1, data.apellido2, data.curp];
+
+    // Validación de campos vacíos
+    if (inputs.some(val => !val)) {
+        showSystemMessage("🚨 Por favor, complete todos los campos requeridos.", false);
         return;
     }
 
-    if (preview.style.display === "none") {
-        alert("Por favor tome una foto");
+    // Validación de la foto
+    if (preview.style.display === "none" || !preview.src || preview.src.includes("data:,")) {
+        showSystemMessage("📸 Por favor, tome una foto antes de guardar.", false);
         return;
     }
 
+    // Simulación de envío/guardado
     console.log("Datos guardados:", data);
-    alert("Datos guardados correctamente");
+    showSystemMessage("✅ Datos guardados correctamente en el registro.", true);
 
-    // Limpiar campos y restablecer vista previa
+    // Limpiar formulario y restablecer vista previa
     document.getElementById("nombreCompleto").value = "";
     document.getElementById("apellido1").value = "";
     document.getElementById("apellido2").value = "";
     document.getElementById("curp").value = "";
+
     preview.style.display = "none";
+    preview.src = "";
     cameraIcon.style.display = "block";
 });
 
-// --- Generador de partículas de fondo ---
+// Configuración y función de generación optimizada para las partículas de fondo
+const NUM_PARTICLES = 50;
+
 function createParticle() {
     const particle = document.createElement("div");
     particle.classList.add("particle");
     backgroundParticles.appendChild(particle);
 
-    const size = Math.random() * 3 + 2; // Tamaño entre 2px y 5px
+    const size = Math.random() * 2 + 1;
     particle.style.width = `${size}px`;
     particle.style.height = `${size}px`;
 
@@ -104,23 +132,27 @@ function createParticle() {
     particle.style.left = `${startX}px`;
     particle.style.top = `${startY}px`;
 
-    // Valores aleatorios para el desplazamiento en X e Y
-    const moveX = (Math.random() - 0.5) * 200; // -100px a 100px
-    const moveY = (Math.random() - 0.5) * 200; // -100px a 100px
+    const moveX = (Math.random() - 0.5) * 100;
+    const moveY = (Math.random() - 0.5) * 100;
 
     particle.style.setProperty("--x", `${moveX}px`);
     particle.style.setProperty("--y", `${moveY}px`);
 
-    const duration = Math.random() * 8 + 5; // Duración entre 5s y 13s
-    const delay = Math.random() * 5; // Retraso para que no todas empiecen a la vez
+    const duration = Math.random() * 6 + 4;
+    const delay = Math.random() * 4;
     particle.style.animationDuration = `${duration}s`;
     particle.style.animationDelay = `${delay}s`;
 
-    // Eliminar la partícula después de su animación para evitar acumulación
+    // Regeneración automática para mantener la densidad fija
     particle.addEventListener("animationend", () => {
         particle.remove();
+        if (backgroundParticles.children.length < NUM_PARTICLES) {
+            createParticle();
+        }
     });
 }
 
-// Generar nuevas partículas a intervalos regulares
-setInterval(createParticle, 300);
+// Inicializa el número fijo de partículas
+for (let i = 0; i < NUM_PARTICLES; i++) {
+    createParticle();
+}

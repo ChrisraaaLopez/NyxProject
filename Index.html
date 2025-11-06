@@ -2,17 +2,388 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Security System</title>
-    <link rel="stylesheet" href="css/style.css">
     <style>
-        /* CSS para reset y fuentes, si es necesario, dejaría esto aquí. Por simplicidad, se movió todo a styles.css */
+         :root {
+            --color-dark: #0f1013;
+            --color-medium: #1f2833;
+            --color-accent: #66fcf1;
+            --color-secondary: #45a29e;
+            --color-text-light: #c5c6c7;
+            --color-text-dark: #0b0c10;
+        }
         
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Consolas', monospace;
+            background-color: var(--color-dark);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+            color: var(--color-text-light);
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulseBorder {
+            0%,
+            100% {
+                box-shadow: 0 0 5px var(--color-accent);
+                border-color: var(--color-secondary);
+            }
+            50% {
+                box-shadow: 0 0 15px var(--color-accent);
+                border-color: var(--color-accent);
+            }
+        }
+        
+        .background-particles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: .6;
+        }
+        
+        .particle {
+            position: absolute;
+            background-color: rgba(102, 252, 241, .15);
+            border-radius: 50%;
+            animation: particleMove infinite ease-in-out;
+            box-shadow: 0 0 3px var(--color-accent);
+        }
+        
+        .container {
+            background-color: var(--color-medium);
+            border: 1px solid var(--color-secondary);
+            border-radius: 6px;
+            padding: 30px 40px;
+            max-width: 900px;
+            width: 100%;
+            box-shadow: 0 0 50px rgba(102, 252, 241, .1);
+            animation: fadeIn .8s ease-out;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed var(--color-secondary);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .bullet {
+            width: 10px;
+            height: 10px;
+            background-color: var(--color-accent);
+            border-radius: 50%;
+            margin-right: 10px;
+            box-shadow: 0 0 8px var(--color-accent);
+            animation: pulseBorder 2s infinite ease-in-out;
+        }
+        
+        .title {
+            color: var(--color-accent);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 5px rgba(102, 252, 241, .5);
+        }
+        
+        .logo {
+            height: 40px;
+            filter: drop-shadow(0 0 5px rgba(102, 252, 241, .5));
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 40px;
+            align-items: start;
+        }
+        
+        .photo-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .photo-frame {
+            background-color: var(--color-dark);
+            border: 2px solid var(--color-secondary);
+            border-radius: 4px;
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+            background-image: linear-gradient(to bottom, transparent 48%, rgba(102, 252, 241, .2) 50%, transparent 52%);
+            background-size: 100% 100px;
+            animation: lightScan 4s infinite linear;
+        }
+        
+        .camera-icon {
+            width: 50%;
+            height: 50%;
+            stroke: var(--color-text-light);
+            stroke-width: 2;
+            fill: none;
+            z-index: 1;
+        }
+        
+        #preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+            z-index: 1;
+        }
+        
+        .btn-photo {
+            background-color: var(--color-dark);
+            color: var(--color-accent);
+            border: 1px solid var(--color-accent);
+            padding: 12px 30px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all .3s ease;
+        }
+        
+        .btn-photo:hover {
+            background-color: var(--color-accent);
+            color: var(--color-text-dark);
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(102, 252, 241, .5);
+        }
+        
+        .btn-photo:active {
+            background-color: var(--color-secondary);
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 15px;
+            animation: fadeIn .5s ease-out forwards;
+        }
+        
+        label {
+            color: var(--color-accent);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 3px;
+            letter-spacing: 1px;
+        }
+        
+        input {
+            background-color: var(--color-dark);
+            border: 1px solid var(--color-secondary);
+            color: var(--color-text-light);
+            padding: 10px 14px;
+            font-size: 14px;
+            border-radius: 3px;
+            transition: all .3s ease;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--color-accent);
+            box-shadow: 0 0 5px var(--color-accent);
+        }
+        
+        input::placeholder {
+            color: var(--color-secondary);
+            opacity: .7;
+        }
+        
+        .curp-group {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+        
+        .btn-save {
+            background-color: var(--color-accent);
+            color: var(--color-text-dark);
+            border: none;
+            padding: 10px 25px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all .3s ease;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(102, 252, 241, .3);
+        }
+        
+        .btn-save:hover {
+            background-color: #8afff7;
+            transform: translateY(-1px);
+        }
+        
+        #videoModal {
+            display: flex;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity .4s ease, visibility .4s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 16, 19, .95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #videoModal.show {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .modal-content {
+            background-color: var(--color-medium);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--color-accent);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        #video {
+            width: 100%;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border: 1px solid var(--color-secondary);
+            animation: pulseBorder 4s infinite ease-in-out;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .btn-capture,
+        .btn-cancel {
+            padding: 10px 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 4px;
+            border: none;
+            transition: all .3s ease;
+        }
+        
+        .btn-capture {
+            background-color: var(--color-accent);
+            color: var(--color-text-dark);
+        }
+        
+        .btn-cancel {
+            background-color: var(--color-secondary);
+            color: var(--color-text-light);
+        }
+        
+        .system-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 4px;
+            z-index: 2000;
+            font-weight: 600;
+            background-color: #ff4d4d;
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 77, 77, .5);
+            animation: fadeIn .5s ease-out;
+            opacity: 1;
+            transition: opacity .5s ease;
+        }
+        
+        .system-message.success {
+            background-color: var(--color-accent);
+            color: var(--color-text-dark);
+            box-shadow: 0 0 10px rgba(102, 252, 241, .7);
+        }
+        
+        @media (max-width:768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 25px;
+            }
+            .title {
+                font-size: 20px;
+                letter-spacing: 3px;
+            }
+        }
+        
+        @keyframes lightScan {
+            0% {
+                background-position: 0% 0%;
+            }
+            100% {
+                background-position: 0% 100%;
+            }
+        }
+        
+        @keyframes particleMove {
+            0% {
+                transform: translate(0, 0) scale(.5);
+                opacity: 0;
+            }
+            20% {
+                opacity: .3;
+            }
+            100% {
+                transform: translate(var(--x), var(--y)) scale(1);
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -24,66 +395,145 @@
             <div class="header-left">
                 <div class="bullet"></div>
                 <div class="title">¡BIENVENIDO!</div>
-            </div>
-            <img src="resources/eyeCon.svg" alt="Logo" class="logo" />
-        </div>
-
+            </div><img src="resources/eyeCon.svg" alt="Logo" class="logo" /></div>
         <div class="content">
             <div class="photo-section">
-                <div class="photo-frame">
-                    <svg class="camera-icon" id="cameraIcon" viewBox="0 0 100 100">
-                        <rect x="15" y="25" width="70" height="50" rx="5" />
-                        <circle cx="50" cy="50" r="15" />
-                        <circle cx="50" cy="50" r="10" />
-                        <circle cx="75" cy="35" r="3" />
-                        <path d="M 35 25 L 40 15 L 60 15 L 65 25" />
-                        <rect x="25" y="65" width="8" height="5" />
-                    </svg>
-                    <img id="preview" alt="Vista previa" />
-                </div>
-                <button class="btn-photo" id="btnTakePhoto">TOMAR FOTO</button>
-            </div>
-
+                <div class="photo-frame"><svg class="camera-icon" id="cameraIcon" viewBox="0 0 100 100"><rect x="15" y="25" width="70" height="50" rx="5"/><circle cx="50" cy="50" r="15"/><circle cx="50" cy="50" r="10"/><circle cx="75" cy="35" r="3"/><path d="M 35 25 L 40 15 L 60 15 L 65 25"/><rect x="25" y="65" width="8" height="5"/></svg><img
+                        id="preview" alt="Vista previa" /></div><button class="btn-photo" id="btnTakePhoto">TOMAR FOTO</button></div>
             <div class="form-section">
-                <div class="form-group">
-                    <label for="nombreCompleto">Nombre Completo</label>
-                    <input type="text" id="nombreCompleto" placeholder="" />
-                </div>
-
-                <div class="form-group">
-                    <label for="apellido1">Apellidos</label>
-                    <input type="text" id="apellido1" placeholder="" />
-                </div>
-
-                <div class="form-group">
-                    <label for="apellido2">Apellidos</label>
-                    <input type="text" id="apellido2" placeholder="" />
-                </div>
-
-                <div class="form-group">
-                    <label for="curp">Codigo</label>
-                    <div class="curp-group">
-                        <input type="text" id="curp" placeholder="" maxlength="18" />
-                        <button class="btn-save" id="btnSave">Guardar</button>
-                    </div>
+                <div class="form-group"><label for="nombreCompleto">Nombre Completo</label><input type="text" id="nombreCompleto" placeholder="" required/></div>
+                <div class="form-group"><label for="apellido1">Apellidos</label><input type="text" id="apellido1" placeholder="" required/></div>
+                <div class="form-group"><label for="apellido2">Apellidos</label><input type="text" id="apellido2" placeholder="" required/></div>
+                <div class="form-group"><label for="curp">Codigo</label>
+                    <div class="curp-group"><input type="text" id="curp" placeholder="" maxlength="18" required/><button class="btn-save" id="btnSave">Guardar</button></div>
                 </div>
             </div>
         </div>
     </div>
-
     <div id="videoModal">
-        <div class="modal-content">
-            <video id="video" autoplay></video>
-            <div class="modal-buttons">
-                <button class="btn-capture" id="btnCapture">Capturar</button>
-                <button class="btn-cancel" id="btnCancel">Cancelar</button>
-            </div>
+        <div class="modal-content"><video id="video" autoplay></video>
+            <div class="modal-buttons"><button class="btn-capture" id="btnCapture">Capturar</button><button class="btn-cancel" id="btnCancel">Cancelar</button></div>
         </div>
-    </div>
+    </div><canvas id="canvas" style="display: none;"></canvas>
+    <script>
+        const btnTakePhoto = document.getElementById("btnTakePhoto");
+        const btnCapture = document.getElementById("btnCapture");
+        const btnCancel = document.getElementById("btnCancel");
+        const btnSave = document.getElementById("btnSave");
+        const videoModal = document.getElementById("videoModal");
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const preview = document.getElementById("preview");
+        const cameraIcon = document.getElementById("cameraIcon");
+        const backgroundParticles = document.getElementById("backgroundParticles");
+        let stream = null;
 
-    <canvas id="canvas"></canvas>
+        function showSystemMessage(message, isSuccess = false) {
+            document.querySelectorAll(".system-message").forEach(el => el.remove());
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("system-message");
+            if (isSuccess) {
+                messageDiv.classList.add("success");
+            }
+            messageDiv.textContent = message;
+            document.body.appendChild(messageDiv);
+            setTimeout(() => {
+                messageDiv.style.opacity = 0;
+                setTimeout(() => messageDiv.remove(), 500);
+            }, 4000);
+        }
+        btnTakePhoto.addEventListener("click", async() => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: true
+                });
+                video.srcObject = stream;
+                videoModal.classList.add("show");
+            } catch (err) {
+                showSystemMessage(`🚨 Error (${err.name}): ${err.message}. Verifique permisos y conexión.`, false);
+            }
+        });
+        btnCapture.addEventListener("click", () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageDataUrl = canvas.toDataURL("image/png");
+            preview.src = imageDataUrl;
+            preview.style.display = "block";
+            cameraIcon.style.display = "none";
+            closeCamera();
+        });
+        btnCancel.addEventListener("click", () => {
+            closeCamera();
+        });
 
-    <script src="js/script.js"></script>
+        function closeCamera() {
+            if (stream) {
+                stream.getTracks().forEach((track) => track.stop());
+                stream = null;
+            }
+            videoModal.classList.remove("show");
+        }
+        btnSave.addEventListener("click", () => {
+            const data = {
+                nombreCompleto: document.getElementById("nombreCompleto").value,
+                apellido1: document.getElementById("apellido1").value,
+                apellido2: document.getElementById("apellido2").value,
+                curp: document.getElementById("curp").value,
+                foto: preview.src,
+            };
+            const inputs = [data.nombreCompleto, data.apellido1, data.apellido2, data.curp];
+            if (inputs.some(val => !val)) {
+                showSystemMessage("🚨 Por favor, complete todos los campos requeridos.", false);
+                return;
+            }
+            if (preview.style.display === "none" || !preview.src || preview.src.includes("data:,")) {
+                showSystemMessage("📸 Por favor, tome una foto antes de guardar.", false);
+                return;
+            }
+            console.log("Datos guardados:", data);
+            showSystemMessage("✅ Datos guardados correctamente en el registro.", true);
+            document.getElementById("nombreCompleto").value = "";
+            document.getElementById("apellido1").value = "";
+            document.getElementById("apellido2").value = "";
+            document.getElementById("curp").value = "";
+            preview.style.display = "none";
+            preview.src = "";
+            cameraIcon.style.display = "block";
+        });
+        const NUM_PARTICLES = 50;
+
+        function createParticle() {
+            const particle = document.createElement("div");
+            particle.classList.add("particle");
+            backgroundParticles.appendChild(particle);
+            const size = Math.random() * 2 + 1;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            const startX = Math.random() * window.innerWidth;
+            const startY = Math.random() * window.innerHeight;
+            particle.style.left = `${startX}px`;
+            particle.style.top = `${startY}px`;
+            const moveX = (Math.random() - .5) * 100;
+            const moveY = (Math.random() - .5) * 100;
+            particle.style.setProperty("--x", `${moveX}px`);
+            particle.style.setProperty("--y", `${moveY}px`);
+            const duration = Math.random() * 6 + 4;
+            const delay = Math.random() * 4;
+            particle.style.animationDuration = `${duration}s`;
+            particle.style.animationDelay = `${delay}s`;
+            particle.addEventListener("animationend", () => {
+                particle.remove();
+                if (backgroundParticles.children.length < NUM_PARTICLES) {
+                    createParticle();
+                }
+            });
+        };
+        for (let i = 0; i < NUM_PARTICLES; i++) {
+            createParticle();
+        }
+    </script>
 </body>
 
 </html>
